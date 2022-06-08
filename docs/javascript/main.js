@@ -1,0 +1,7 @@
+import InitCanvas from "./canvas.js";
+window.onload = function () {
+    let canvasContainer = document.getElementById("main-container");
+    canvasContainer.setAttribute("style", "position: absolute; top: 0; left: 0; right: 0; bottom: 0;");
+    InitCanvas(canvasContainer);
+};
+//# sourceMappingURL=main.js.map
