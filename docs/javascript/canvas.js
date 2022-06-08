@@ -49,20 +49,48 @@ bottom: 0; `;
     else {
         throw "Failed to get the 2D context";
     }
-    RenderOnResize = true;
+    window.onclick = WindowOnClick;
     window.onresize = UpdateCanvasSize;
     UpdateCanvasSize();
     Canvas.hidden = false;
-    // StartDrawTimer();
 }
-function DrawStuff() {
-    DrawHorizontalLinearGradient([255, 0, 0, 255], [0, 255, 255, 255]);
+let IsCycling = false;
+let ContinueAnimating = false;
+function WindowOnClick() {
+    ContinueAnimating = !IsCycling; // stop animating if we are about to stop cycling
+    if (IsCycling) {
+        // stop cycling
+        setTimeout(() => {
+            RenderOnResize = true;
+            UpdateCanvasSize();
+        }, 100);
+    }
+    else {
+        //start cycling
+        RenderOnResize = false;
+        DrawCyclingColors();
+    }
+    IsCycling = !IsCycling;
+}
+function DrawResize() {
+    DrawSingleFrame();
+}
+function DrawRandomGradient() {
+    let leftColor = [];
+    let rightColor = [];
+    for (var i = 0; i < 3; i++) {
+        leftColor.push(Math.random() * 255);
+        rightColor.push(Math.random() * 255);
+    }
+    leftColor.push(255);
+    rightColor.push(255);
+    DrawHorizontalLinearGradient(leftColor, rightColor);
 }
 function UpdateCanvasSize() {
     Canvas.height = CanvasContainer.clientHeight;
     Canvas.width = CanvasContainer.clientWidth;
     if (RenderOnResize) {
-        DrawStuff();
+        DrawResize();
     }
 }
 const FULL_CYCLE_MS = 10000;
@@ -102,23 +130,20 @@ function DrawHorizontalLinearGradient(leftRgba, rightRgba) {
             Math.round(leftRgba[2] - (deltaRgba[2] * progress)),
             Math.round(leftRgba[3] - (deltaRgba[3] * progress))
         ];
-        console.log(columnColors[i]);
     }
     const imageSize = bytes.length;
     for (let i = 0; i < imageSize; i += 4) {
         let pixelNum = i / 4;
         let colNum = pixelNum % imageWidth;
         let color = columnColors[colNum];
-        // console.log(`${i}\t${pixelNum}\t${colNum}`)
         bytes[i + 0] = color[0];
         bytes[i + 1] = color[1];
         bytes[i + 2] = color[2];
         bytes[i + 3] = color[3];
     }
     CanvasContext.putImageData(imageData, 0, 0);
-    console.log("Done?");
 }
-function DrawCyclingColors(deltaTime) {
+function DrawNextColor(deltaTime) {
     let imageData = new ImageData(Canvas.width, Canvas.height);
     let bytes = imageData.data;
     let cycleProgress = (deltaTime % FULL_CYCLE_MS) / FULL_CYCLE_MS;
@@ -147,21 +172,31 @@ function DrawCyclingColors(deltaTime) {
     const blueByte = Math.round(blue * 255);
     DrawSolidColor([redByte, greenByte, blueByte, 255]);
 }
-function StartDrawTimer() {
+function DrawCyclingColors() {
     InitialTime = performance.now();
     window.requestAnimationFrame(DrawNewFrame);
     function DrawNewFrame(time) {
         let runTime = time - InitialTime;
-        // console.log(`Time since last frame (ms): ${runTime - LastRenderTime}`);
-        DrawCyclingColors(runTime);
+        DrawNextColor(runTime);
         LastRenderTime = runTime;
-        window.requestAnimationFrame(DrawNewFrame);
+        if (ContinueAnimating)
+            window.requestAnimationFrame(DrawNewFrame);
     }
+}
+function DrawSingleFrame() {
+    DrawRandomGradient();
+}
+/*
+    Old timer method
+
+
     // TimerCallback();
+
     // function TimerCallback(): void {
     //     let now = Date.now();
     //     let timeSinceLastFrame = now - LastRenderTime;
     //     let timeUntilNextFrame = FRAME_DRAW_INTERVAL_MS - timeSinceLastFrame;
+    
     //     if (timeUntilNextFrame < FRAME_DRAW_INTERVAL_EPSILLON) {
     //         DrawSolidColor(now - InitialTime);
     //         LastRenderTime = now;
@@ -170,5 +205,5 @@ function StartDrawTimer() {
     //         setTimeout(TimerCallback, timeUntilNextFrame - 1);
     //     }
     // }
-}
+*/
 //# sourceMappingURL=canvas.js.map
