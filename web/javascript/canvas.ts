@@ -62,17 +62,54 @@ bottom: 0; `;
         throw "Failed to get the 2D context";
     }
 
-    RenderOnResize = true;
+    window.onclick = WindowOnClick;
+
     window.onresize = UpdateCanvasSize;
     UpdateCanvasSize();
 
     Canvas.hidden = false;
-
-    // StartDrawTimer();
 }
 
-function DrawStuff(): void {
-    DrawHorizontalLinearGradient([255, 0, 0, 255], [0, 255, 255, 255]);
+
+let IsCycling = false;
+let ContinueAnimating = false;
+
+function WindowOnClick(): void {
+    ContinueAnimating = !IsCycling; // stop animating if we are about to stop cycling
+    
+    if (IsCycling) {
+        // stop cycling
+        setTimeout(() => {
+            RenderOnResize = true;
+            UpdateCanvasSize();
+        }, 100);
+    } else {
+        //start cycling
+        RenderOnResize = false;
+        DrawCyclingColors();
+    }
+
+    IsCycling = !IsCycling;
+}
+
+
+function DrawResize(): void {
+    DrawSingleFrame();
+}
+
+function DrawRandomGradient(): void {
+    let leftColor: number[] = [];
+    let rightColor: number[] = [];
+
+    for (var i = 0; i < 3; i++) {
+        leftColor.push(Math.random() * 255);
+        rightColor.push(Math.random() * 255);
+    }
+
+    leftColor.push(255);
+    rightColor.push(255);
+
+    DrawHorizontalLinearGradient(leftColor, rightColor);
 }
 
 
@@ -81,7 +118,7 @@ function UpdateCanvasSize(): void {
     Canvas.width = CanvasContainer.clientWidth;
 
     if (RenderOnResize) {
-        DrawStuff();
+        DrawResize();
     }
 }
 
@@ -128,7 +165,6 @@ function DrawHorizontalLinearGradient(leftRgba: number[], rightRgba: number[]): 
             Math.round(leftRgba[2] - (deltaRgba[2] * progress)),
             Math.round(leftRgba[3] - (deltaRgba[3] * progress))
         ];
-        console.log(columnColors[i]);
     }
 
     const imageSize = bytes.length;
@@ -136,7 +172,6 @@ function DrawHorizontalLinearGradient(leftRgba: number[], rightRgba: number[]): 
         let pixelNum = i / 4;
         let colNum = pixelNum % imageWidth;
         let color = columnColors[colNum];
-        // console.log(`${i}\t${pixelNum}\t${colNum}`)
 
         bytes[i + 0] = color[0];
         bytes[i + 1] = color[1];
@@ -145,11 +180,9 @@ function DrawHorizontalLinearGradient(leftRgba: number[], rightRgba: number[]): 
     }
     
     CanvasContext.putImageData(imageData, 0, 0);
-
-    console.log("Done?");
 }
 
-function DrawCyclingColors(deltaTime: number): void {
+function DrawNextColor(deltaTime: number): void {
     let imageData = new ImageData(Canvas.width, Canvas.height);
     let bytes = imageData.data;
 
@@ -182,19 +215,33 @@ function DrawCyclingColors(deltaTime: number): void {
     DrawSolidColor([redByte, greenByte, blueByte, 255]);
 }
 
-function StartDrawTimer(): void {
+function DrawCyclingColors(): void {
     InitialTime = performance.now();
     window.requestAnimationFrame(DrawNewFrame)
 
     function DrawNewFrame(time: DOMHighResTimeStamp): void {
         let runTime = time - InitialTime;
-        // console.log(`Time since last frame (ms): ${runTime - LastRenderTime}`);
-        DrawCyclingColors(runTime);
+        DrawNextColor(runTime);
 
         LastRenderTime = runTime;
 
-        window.requestAnimationFrame(DrawNewFrame);
+        if (ContinueAnimating)
+            window.requestAnimationFrame(DrawNewFrame);
     }
+}
+
+function DrawSingleFrame(): void {
+    DrawRandomGradient();
+}
+
+
+
+
+
+
+/*
+    Old timer method
+
 
     // TimerCallback();
 
@@ -211,4 +258,4 @@ function StartDrawTimer(): void {
     //         setTimeout(TimerCallback, timeUntilNextFrame - 1);
     //     }
     // }
-}
+*/
